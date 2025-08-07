@@ -43,15 +43,22 @@ app.get('/api/balance', async (req, res) => {
 
 // ✅ Route: Place Buy/Sell Order for BTCINR
 app.post('/api/order', async (req, res) => {
-  const { side, qty } = req.body;
-  if (!side || !qty) return res.status(400).json({ error: 'side and qty required' });
+  // Accept both the original parameters and the new reference-style parameters
+  const { side, qty, quantity, price } = req.body;
+  
+  // Use qty if provided, otherwise use quantity (for reference-style orders)
+  const finalQty = qty || quantity;
+  
+  if (!side || !finalQty) {
+    return res.status(400).json({ error: 'side and quantity/qty required' });
+  }
 
   try {
     const orderPayload = {
       side: side,
       order_type: "market_order",
       market: "BTCINR",
-      total_quantity: parseFloat(qty),
+      total_quantity: parseFloat(finalQty),
       timestamp: Date.now()
     };
 
@@ -70,6 +77,7 @@ app.post('/api/order', async (req, res) => {
     res.status(500).json({ error: 'Trade failed', details: err.response?.data || err.message });
   }
 });
+
 
 // ✅ Route: Get BTCINR Price
 app.get('/api/price', async (req, res) => {
